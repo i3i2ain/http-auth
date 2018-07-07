@@ -28,10 +28,6 @@ class Base extends events.EventEmitter {
             options.realm = "users";
         }
 
-        if (!options.skipAuthHeader) {
-            options.skipAuthHeader = false;
-        }
-
         // Assign values.
         this.options = options;
         this.checker = checker;
@@ -68,15 +64,22 @@ class Base extends events.EventEmitter {
     ask(res, result) {
         let header = this.generateHeader(result);
         res.setHeader("Content-Type", this.options.contentType);
+        console.log(`#####################################################################################`);
+        console.log(`            LOGGING INSIDE >>>> ASK <<<<<`);
+        console.log('################################################################################### \n');           
 
         if (this.proxy) {
+            console.log(`#####################################################################################`);
+            console.log(`            LOGGING INSIDE >>>> 407 <<<<<`);
+            console.log('################################################################################### \n');               
             res.setHeader("Proxy-Authenticate", header);
             res.writeHead(407);
             res.end(this.options.msg407);
         } else {
-            if (!this.options.skipAuthHeader) {
-                res.setHeader("WWW-Authenticate", header);
-            }
+            console.log(`#####################################################################################`);
+            console.log(`            LOGGING INSIDE >>>> 401 <<<<< ${this.options.msg401} >>>>>`);
+            console.log('################################################################################### \n');                           
+            res.setHeader("WWW-Authenticate", header); // DAS IST DAS PROBLEM!!! YEHAAAA!!! wenn man es auskommentiert oder header anders schreibt geht alles!
             res.writeHead(401);
             res.end(this.options.msg401);
         }
@@ -84,18 +87,33 @@ class Base extends events.EventEmitter {
 
     // Checking if user is authenticated.
     check(req, res, callback) {
+        console.log(`#####################################################################################`);
+        console.log(`            LOGGING INSIDE >>>  CHECK <<<<`);
+        console.log('################################################################################### \n');           
         let self = this;
         this.isAuthenticated(req, (result) => {
+            console.log(`#####################################################################################`);
+            console.log(`            LOGGING isAuthenticated >>>  is resolved <<<<`);
+            console.log('################################################################################### \n'); 
             if (result instanceof Error) {
+                console.log(`#####################################################################################`);
+                console.log(`            LOGGING isAuthenticated >>>  is instanceof Error <<<<`);
+                console.log('################################################################################### \n');                 
                 self.emit('error', result, req);
 
                 if (callback) {
                     callback.apply(self, [req, res, result]);
                 }
             } else if (!result.pass) {
+                console.log(`#####################################################################################`);
+                console.log(`            LOGGING isAuthenticated >>>  !result.pass <<<<`);
+                console.log('################################################################################### \n');                                 
                 self.emit('fail', result, req);
                 self.ask(res, result);
             } else {
+                console.log(`#####################################################################################`);
+                console.log(`            LOGGING isAuthenticated >>>  SUCCESS authenthicated (worked)  <<<<`);
+                console.log('################################################################################### \n');                                                 
                 self.emit('success', result, req);
 
                 if (!this.options.skipUser) {
